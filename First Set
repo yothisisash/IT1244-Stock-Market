@@ -5,4 +5,7 @@ aravindh = 111
 
 # okok we frfr start now
 
-aravindh+aswin
+def a(x,y):
+    return(x+y)
+
+a(aravindh,aswin)
