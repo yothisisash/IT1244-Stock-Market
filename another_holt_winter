@@ -1,0 +1,55 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+
+### Given the stock information of at least the past 5 days of one particular company, try to predict the closing price of that company on a particular day
+# Load the dataset
+data = pd.read_csv(r"C:\Users\Admin\IT1244-Stock-Market\merged_company_data.csv")
+
+# Convert 'Date' to datetime
+data['Date'] = pd.to_datetime(data['Date'])
+
+# Define the company of interest
+company = 'AFL'  # Replace with your company name
+
+# Filter data for the specific company
+company_data = data[data['Symbol'] == company].set_index('Date')
+
+# Ensure we have at least 5 days of data
+if len(company_data) < 5:
+    raise ValueError("Not enough data to predict. At least 5 days are required.")
+
+# Use the last n days for modeling
+last_n_days = company_data['Close'].tail(120)
+
+# Fit the Holt-Winters model
+model = ExponentialSmoothing(
+    last_n_days,
+    trend='add',
+    seasonal=None  # Assuming no seasonality for short-term prediction
+).fit()
+
+# Forecast the next day's closing price
+forecast = model.forecast(steps=1)
+
+# Prepare data for visualization
+historical_m_data = company_data['Close'][-150:]  # Last m days for context
+smoothed_values = model.fittedvalues
+
+# Visualization
+plt.figure(figsize=(10, 5))
+plt.plot(historical_m_data.index, historical_m_data, label='Historical Closing Prices', color='blue')
+plt.plot(smoothed_values.index, smoothed_values, label='Holt-Winters Smoothed Values', color='orange', linestyle='--')
+plt.axvline(x=historical_m_data.index[-1], color='red', linewidth=1, linestyle='--', label='Forecast Start')
+plt.plot(historical_m_data.index[-1] + pd.DateOffset(days=1), forecast, marker='o', label='Predicted Closing Price', color='green')
+plt.title(f'Closing Price Prediction for {company}')
+plt.xlabel('Date')
+plt.ylabel('Closing Price')
+plt.legend()
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# Output the predicted closing price
+print(f'Predicted Closing Price for {company} on the next day: {forecast.iloc[0]}')
