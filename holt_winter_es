@@ -1,0 +1,110 @@
+import numpy as np
+import pandas as pd
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+
+# Load your stock data
+data = pd.read_csv(r"C:\Users\Admin\IT1244-Stock-Market\merged_company_data.csv") 
+data = data[:31]
+data['Date'] = pd.to_datetime(data['Date'])
+data.set_index('Date', inplace=True)
+
+# Ensure data is sorted by date
+data = data.sort_index()
+
+def forecast_close_all_companies(data, company, window_size, forecast_horizon):
+    # Filter the data for the specified company
+    company_data = data[[company]].dropna()
+
+    rmse_scores = []
+    forecast_values = []
+
+    for start in range(len(company_data) - window_size - forecast_horizon + 1):
+        train = company_data.iloc[start:start + window_size]
+        test = company_data.iloc[start + window_size:start + window_size + forecast_horizon]
+        
+        # Fit the model
+        model = ExponentialSmoothing(train, trend='add', seasonal='add', seasonal_periods=12)  # Adjust if necessary
+        fit = model.fit()
+        
+        # Forecast
+        forecast = fit.forecast(steps=forecast_horizon)
+        
+        # Calculate RMSE
+        rmse = np.sqrt(mean_squared_error(test, forecast))
+        rmse_scores.append(rmse)
+        
+        # Store forecast values
+        forecast_values.append(forecast.values)
+
+    return np.mean(rmse_scores), forecast_values
+
+def forecast_close_single_company(data, company, window_size, forecast_horizon):
+    # Filter the data for the specified company
+    company_data = data[[company]].dropna()
+
+    rmse_scores = []
+    forecast_values = []
+
+    for start in range(len(company_data) - window_size - forecast_horizon + 1):
+        train = company_data.iloc[start:start + window_size]
+        test = company_data.iloc[start + window_size:start + window_size + forecast_horizon]
+        
+        # Fit the model
+        model = ExponentialSmoothing(train, trend= 'add', seasonal='add', seasonal_periods=12)  # Adjust if necessary
+        fit = model.fit()
+        
+        # Forecast
+        forecast = fit.forecast(steps=forecast_horizon)
+        
+        # Calculate RMSE
+        rmse = np.sqrt(mean_squared_error(test, forecast))
+        rmse_scores.append(rmse)
+        
+        # Store forecast values
+        forecast_values.append(forecast.values)
+
+    return np.mean(rmse_scores), forecast_values
+
+# Parameters
+window_size = 10  # Adjust as needed
+forecast_horizon = 1  # Predicting the next day's closing price
+company_name = 'CompanyA'  # Replace with the name of the company you want to predict
+
+mean_rmse_all, forecasts_all = forecast_close_all_companies(data, company_name, window_size, forecast_horizon)
+print(f'Mean RMSE for {company_name} using all companies: {mean_rmse_all}')
+print(f'Forecasts: {forecasts_all}')
+
+mean_rmse_single, forecasts_single = forecast_close_single_company(data, company_name, window_size, forecast_horizon)
+print(f'Mean RMSE for {company_name} using only its own data: {mean_rmse_single}')
+print(f'Forecasts: {forecasts_single}')
+
+def plot_forecast(actual, forecast, title='Actual vs Forecast', xlabel='Date', ylabel='Closing Price'):
+    plt.figure(figsize=(12, 6))
+    
+    # Plot actual values
+    plt.plot(actual.index, actual, label='Actual', color='blue', marker='o')
+    
+    # Generate the index for the forecasted values
+    forecast_index = pd.date_range(start=actual.index[-1] + pd.Timedelta(days=1), periods=len(forecast), freq='D')
+    plt.plot(forecast_index, forecast, label='Forecast', color='orange', marker='x')
+    
+    # Add labels and title
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+# Assuming you have the forecasted values from your model
+# For example, using the function you defined earlier:
+mean_rmse_all, forecasts_all = forecast_close_all_companies(data, company_name, window_size, forecast_horizon)
+
+# Get the actual closing prices for the forecasted period
+actual_values = data[company_name].iloc[window_size:window_size + len(forecasts_all[0])]
+
+# Plot the actual vs forecasted values
+plot_forecast(actual_values, forecasts_all[0], title=f'Forecast for {company_name} using All Companies')
