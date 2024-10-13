@@ -1,0 +1,65 @@
+# Step 1: Add more features
+# Let's assume your CSV also has columns like 'Open', 'High', 'Low', 'Volume' in addition to 'Close'.
+# We can also compute moving averages as additional features.
+
+data['Open'] = data['Open'].astype(float)
+data['High'] = data['High'].astype(float)
+data['Low'] = data['Low'].astype(float)
+
+# Compute 5-day and 10-day moving averages for 'Close' price as additional features
+data['MA_5'] = data['Close'].rolling(window=5).mean()
+data['MA_10'] = data['Close'].rolling(window=10).mean()
+
+# Drop rows with NaN values after moving average computation
+data.dropna(inplace=True)
+
+# Step 2: Feature selection - now we will include these additional features
+features = data[['Close', 'Open', 'High', 'Low', 'Volume', 'MA_5', 'MA_10']]
+
+# Step 3: Normalize the features
+scaler = MinMaxScaler(feature_range=(0, 1))
+scaled_features = scaler.fit_transform(features)
+
+# Step 4: Prepare the data for LSTM - using updated feature set
+def create_sequences(data, seq_length):
+    sequences = []
+    labels = []
+    for i in range(seq_length, len(data)):
+        sequences.append(data[i-seq_length:i])
+        labels.append(data[i, 0])  # The next 'Close' price is still the label
+    return np.array(sequences), np.array(labels)
+
+sequence_length = 10  # Look back 10 days
+X, y = create_sequences(scaled_features, sequence_length)
+
+# Step 5: Split data into training and test sets
+split = int(0.8 * len(X))
+X_train, X_test = X[:split], X[split:]
+y_train, y_test = y[:split], y[split:]
+
+# Step 6: Build and train the model (same as before)
+model = Sequential()
+model.add(LSTM(50, return_sequences=False, input_shape=(X_train.shape[1], X_train.shape[2])))
+model.add(Dense(1))
+
+model.compile(optimizer='adam', loss='mean_squared_error')
+history = model.fit(X_train, y_train, epochs=20, batch_size=64, validation_data=(X_test, y_test))
+
+# Evaluate the model
+mse = model.evaluate(X_test, y_test)
+print(f"Test Mean Squared Error: {mse}")
+
+# Predict and visualize (as before)
+predictions = model.predict(X_test)
+
+predicted_prices = scaler.inverse_transform(np.concatenate((predictions, np.zeros((predictions.shape[0], features.shape[1]-1))), axis=1))[:, 0]
+actual_prices = scaler.inverse_transform(np.concatenate((y_test.reshape(-1, 1), np.zeros((y_test.shape[0], features.shape[1]-1))), axis=1))[:, 0]
+
+plt.figure(figsize=(10,6))
+plt.plot(actual_prices, label='Actual Prices')
+plt.plot(predicted_prices, label='Predicted Prices')
+plt.title('Stock Price Prediction with Additional Features')
+plt.xlabel('Time')
+plt.ylabel('Stock Price')
+plt.legend()
+plt.show()
