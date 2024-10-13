@@ -1,0 +1,64 @@
+from sklearn.preprocessing import MinMaxScaler
+import numpy as np
+
+# Step 1: Handle missing values
+# For simplicity, we'll fill missing values in sentiment columns with 0 (neutral sentiment) and drop any non-essential text columns.
+data.fillna(0, inplace=True)
+
+# Step 2: Convert Date to datetime and sort by date
+data['Date'] = pd.to_datetime(data['Date'], format='%d/%m/%Y')
+data = data.sort_values('Date')
+
+# Step 3: Feature selection
+# We'll use 'Close' and 'Volume' for stock prediction, and drop categorical/text columns for now.
+features = data[['Close', 'Volume']]
+
+# Step 4: Normalize the data
+scaler = MinMaxScaler(feature_range=(0, 1))
+scaled_features = scaler.fit_transform(features)
+
+# Step 5: Create sequences for LSTM
+# We will create a sequence length of 10 days to predict the next day (you can adjust this).
+def create_sequences(data, seq_length):
+    sequences = []
+    labels = []
+    for i in range(seq_length, len(data)):
+        sequences.append(data[i-seq_length:i])
+        labels.append(data[i, 0])  # The next 'Close' price is the label
+    return np.array(sequences), np.array(labels)
+
+sequence_length = 10
+X, y = create_sequences(scaled_features, sequence_length)
+
+# Step 6: Split the data into training and test sets (80% training, 20% testing)
+split = int(0.8 * len(X))
+X_train, X_test = X[:split], X[split:]
+y_train, y_test = y[:split], y[split:]
+
+# Display the shape of the preprocessed data for LSTM
+X_train.shape, X_test.shape, y_train.shape, y_test.shape
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
+
+# Step 7: Build the LSTM model
+model = Sequential()
+
+# Adding LSTM layer
+model.add(LSTM(50, return_sequences=False, input_shape=(X_train.shape[1], X_train.shape[2])))
+
+# Adding output layer
+model.add(Dense(1))  # Outputting a single 'Close' price prediction
+
+# Step 8: Compile the model
+model.compile(optimizer='adam', loss='mean_squared_error')
+
+# Step 9: Train the model
+history = model.fit(X_train, y_train, epochs=5, batch_size=64, validation_data=(X_test, y_test))
+
+# Evaluate the model
+loss = model.evaluate(X_test, y_test)
+print(f"Test Loss: {loss}")
+
+# Step 10: Make predictions
+predictions = model.predict(X_test)
