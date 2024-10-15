@@ -1,0 +1,77 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
+
+# Load your preprocessed data (e.g., from earlier steps)
+file_path = 'path_to_your_data/merged_company_data.csv'  # Replace with your actual path
+data = pd.read_csv(file_path)
+
+# Preprocessing steps (fill missing values, normalize data, create sequences)
+data.fillna(0, inplace=True)
+data['Date'] = pd.to_datetime(data['Date'], format='%d/%m/%Y')
+data = data.sort_values('Date')
+
+# Using 'Close' and 'Volume' for prediction
+features = data[['Close', 'Volume']]
+
+scaler = MinMaxScaler(feature_range=(0, 1))
+scaled_features = scaler.fit_transform(features)
+
+def create_sequences(data, seq_length):
+    sequences = []
+    labels = []
+    for i in range(seq_length, len(data)):
+        sequences.append(data[i-seq_length:i])
+        labels.append(data[i, 0])  # Predicting 'Close' price
+    return np.array(sequences), np.array(labels)
+
+sequence_length = 10
+X, y = create_sequences(scaled_features, sequence_length)
+
+split = int(0.8 * len(X))
+X_train, X_test = X[:split], X[split:]
+y_train, y_test = y[:split], y[split:]
+
+# Build and train the LSTM model
+model = Sequential()
+model.add(LSTM(50, return_sequences=False, input_shape=(X_train.shape[1], X_train.shape[2])))
+model.add(Dense(1))
+
+model.compile(optimizer='adam', loss='mean_squared_error')
+history = model.fit(X_train, y_train, epochs=20, batch_size=64, validation_data=(X_test, y_test))
+
+# Evaluate the model
+mse = model.evaluate(X_test, y_test)
+print(f"Test Mean Squared Error: {mse}")
+
+# Make predictions
+predictions = model.predict(X_test)
+
+# Inverse transform the predictions and actual values to get original scale
+predicted_prices = scaler.inverse_transform(np.concatenate((predictions, np.zeros((predictions.shape[0], 1))), axis=1))[:, 0]
+actual_prices = scaler.inverse_transform(np.concatenate((y_test.reshape(-1, 1), np.zeros((y_test.shape[0], 1))), axis=1))[:, 0]
+
+# Plot predictions vs actual prices
+plt.figure(figsize=(10,6))
+plt.plot(actual_prices, label='Actual Prices')
+plt.plot(predicted_prices, label='Predicted Prices')
+plt.title('Stock Price Prediction using LSTM')
+plt.xlabel('Time')
+plt.ylabel('Stock Price')
+plt.legend()
+plt.show()
+
+# Plot training and validation loss
+plt.figure(figsize=(10,6))
+plt.plot(history.history['loss'], label='Train Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Model Loss over Epochs')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
+
+
