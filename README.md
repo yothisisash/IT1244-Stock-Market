@@ -9,37 +9,37 @@
 # Holt-Winter's Exponential Smoothing (HWES):
 # the below comments are for steps that require your own personalisation
 - Single company version:
---> Load your training data
---> Select your company of interest by typing their symbol (or whatever is used to distinguish them)
---> Select how many days you want to train in your training data (though since it is training set, can use all)
---> Select your rolling-window parameters (train_size, test_size and roll_window)
---> Select how many historical data you want to plot
---> Load your test data
---> Select the same company as before
---> Select how many days you are testing your data if you don't want to use entire test set
---> Select how many historical data you want to plot
+- Load your training data
+- Select your company of interest by typing their symbol (or whatever is used to distinguish them)
+- Select how many days you want to train in your training data (though since it is training set, can use all)
+- Select your rolling-window parameters (train_size, test_size and roll_window)
+- Select how many historical data you want to plot
+- Load your test data
+- Select the same company as before
+- Select how many days you are testing your data if you don't want to use entire test set
+- Select how many historical data you want to plot
 
 - Some companies version:
---> Load your training data
---> Select your company of interest by typing their symbol (or whatever is used to distinguish them)
---> Select how many days you want to train in your training data (though since it is training set, can use all)
---> Select your rolling-window parameters (train_size, test_size and roll_window)
---> Select how many historical data you want to plot
---> Load your test data
---> Select the same company as before
---> Select how many days you are testing your data if you don't want to use entire test set
---> Select how many historical data you want to plot
+- Load your training data
+- Select your company of interest by typing their symbol (or whatever is used to distinguish them)
+- Select how many days you want to train in your training data (though since it is training set, can use all)
+- Select your rolling-window parameters (train_size, test_size and roll_window)
+- Select how many historical data you want to plot
+- Load your test data
+- Select the same company as before
+- Select how many days you are testing your data if you don't want to use entire test set
+- Select how many historical data you want to plot
 
 - All companies version:
---> Load your training data
---> Select your company of interest by typing their symbol (or whatever is used to distinguish them)
---> Select how many days you want to train in your training data (though since it is training set, can use all)
---> Select your rolling-window parameters (train_size, test_size and roll_window)
---> Select how many historical data you want to plot
---> Load your test data
---> Select the same company as before
---> Select how many days you are testing your data if you don't want to use entire test set
---> Select how many historical data you want to plot
+- Load your training data
+- Select your company of interest by typing their symbol (or whatever is used to distinguish them)
+- Select how many days you want to train in your training data (though since it is training set, can use all)
+- Select your rolling-window parameters (train_size, test_size and roll_window)
+- Select how many historical data you want to plot
+- Load your test data
+- Select the same company as before
+- Select how many days you are testing your data if you don't want to use entire test set
+- Select how many historical data you want to plot
 
 # Long Short-Term Memory Neural Network (LSTM):
 
